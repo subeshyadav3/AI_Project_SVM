@@ -106,6 +106,7 @@ Evaluation performed on the held-out test split of the **UTKFace** benchmark dat
 │   ├── 03_cnn_backbone.md                 # ResNet-18 feature extractor details
 │   ├── 04_svm.md                          # Primal/Dual derivation, KKT conditions, RBF
 │   └── 05_detection_deployment.md         # Real-time pipeline, NMS & latency
+├── train.py                               # End-to-end data preprocessing & training pipeline
 ├── README.md                              # Main documentation (this file)
 ├── requirements.txt                       # Project dependencies
 └── .gitignore                             # Ignored files & caches
@@ -153,6 +154,22 @@ http://localhost:8000
 ```
 - **Image Upload Tab**: Drag-and-drop any photograph to detect faces and view gender predictions with confidence ratings.
 - **Live Webcam Tab**: Real-time bounding box detection with color-coded gender overlays (Blue = Male, Pink = Female).
+
+### Running the Data Preprocessing & Training Pipeline
+To run a fast live verification of the end-to-end preprocessing, transfer learning, feature extraction, and SVM grid search on synthetic samples:
+```bash
+python train.py --dry-run
+```
+
+To run complete training on the full UTKFace dataset:
+```bash
+python train.py --data-dir /path/to/UTKFace --epochs 10 --batch-size 32
+```
+
+Alternatively, open and run the interactive evaluation notebook:
+```bash
+jupyter notebook notebooks/SVM_GENDER_TRAINING.ipynb
+```
 
 ---
 
