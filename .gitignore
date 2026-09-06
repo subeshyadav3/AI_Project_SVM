@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+pip-log.txt
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Training artifacts - large / reproducible (ignored, keep .gitkeep)
+gender/checkpoints/*.pth
+gender/checkpoints/*.pt
+gender/features/*.npz
+gender/features/*.npy
+gender/features/*.pkl
+gender/logs/
+gender/results/*.png
+gender/results/*.jpg
+
+# App runtime
+Gender_classification_app/backend/__pycache__/
+Gender_classification_app/backend/*.log
+Gender_classification_app/backend/uvicorn*.log
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env & secrets
+.env
+*.env
