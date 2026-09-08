@@ -234,7 +234,7 @@ Full presentation files from the project defense are available directly in the r
 │   ├── gender_resnet18_best.pth           # Fine-tuned ResNet-18 PyTorch weights
 │   └── gender_complete_model.joblib       # Bundled SVM model + StandardScaler + metadata
 ├── notebooks/
-│   └── SVM_GENDER_TRAINING.ipynb          # End-to-end training & grid search notebook
+│   └── svm_gender_classification.ipynb    # End-to-end evaluation & training notebook
 ├── results/
 │   ├── dataset_split.csv                  # Stratified train/val/test splits
 │   ├── gender_cnn_history.csv             # Training and validation loss curves
@@ -266,7 +266,7 @@ To re-run training or reproduce the grid search:
 
 3. **Interactive Jupyter Notebook**:
    ```bash
-   jupyter notebook notebooks/SVM_GENDER_TRAINING.ipynb
+   jupyter notebook notebooks/svm_gender_classification.ipynb
    ```
 
 ---
