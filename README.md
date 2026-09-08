@@ -9,32 +9,111 @@ A practical, real-time facial gender classification system that combines deep re
 [![Accuracy](https://img.shields.io/badge/Test_Accuracy-91.98%25-brightgreen.svg)]()
 [![Balanced Accuracy](https://img.shields.io/badge/Balanced_Accuracy-91.95%25-brightgreen.svg)]()
 
+> **Quick Evaluation Notice**:
+> All trained model weights, scalers, and detectors are pre-bundled in the [`models/`](models/) directory. **No external downloads, API keys, or GPU required** to run and test the complete system.
+
+---
+
+## Quick Start & Testing Guide (For Evaluators)
+
+Follow these steps to run and test the application on your machine.
+
+### 1. Clone the Repository
+
+```bash
+# Using HTTPS (recommended)
+git clone https://github.com/subeshyadav3/AI_Project_SVM.git
+cd AI_Project_SVM
+
+# Or using SSH
+git clone git@github.com:subeshyadav3/AI_Project_SVM.git
+cd AI_Project_SVM
+```
+
+### 2. Set Up Virtual Environment
+
+> Python 3.10 or 3.11 is recommended.
+
+**On Linux / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+```
+
+**On Windows (Command Prompt / PowerShell):**
+```cmd
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r backend/requirements.txt
+```
+
+*(Optional alternative using [uv](https://github.com/astral-sh/uv) for ultra-fast setup:)*
+```bash
+uv venv --python 3.11 .venv
+source .venv/bin/activate
+uv pip install -r backend/requirements.txt
+```
+
+### 3. Quick Terminal Sanity Check (Optional)
+
+To verify in 3 seconds that the models, detector, and PyTorch/SVM pipeline load cleanly:
+```bash
+python -c "import sys; sys.path.append('backend'); from gender_model import GenderClassifier; from face_detector import FaceDetector; GenderClassifier(); FaceDetector(); print('\n>>> Pipeline & models loaded successfully! <<<')"
+```
+
+### 4. Run the Backend & Web Application
+
+Start the server:
+```bash
+python backend/app.py
+```
+*(Or alternatively with uvicorn directly: `uvicorn backend.app:app --host 127.0.0.1 --port 8000`)*
+
+### 5. Open & Test in Your Browser
+
+Navigate to:
+```
+http://localhost:8000
+```
+
+You can test the application in three ways:
+
+1. **Upload & Test Images**:
+   - Under the **Image Analysis** tab, drag and drop or browse any photograph with one or multiple faces.
+   - The app will highlight detected faces with bounding boxes and display predicted gender (`Male` / `Female`) and confidence score.
+2. **Live Webcam Test**:
+   - Switch to the **Live Webcam** tab and click **Start Camera**.
+   - Tests real-time face detection and gender classification at sub-35ms frame latency.
+3. **Interactive API Docs (Swagger UI)**:
+   - Visit `http://localhost:8000/docs` to test the `/predict` REST endpoint directly with your own images.
+
 ---
 
 ## What is FaceClass?
 
-Most modern facial attribute classifiers train an end-to-end neural network with a softmax classification head. While effective, standard softmax outputs can overfit on nuanced boundary samples and often require heavy GPU compute during inference.
+Most conventional facial attribute classifiers train a standard deep neural network end-to-end with a softmax output. While functional, softmax decision boundaries often struggle with fine-grained edge cases and require heavy compute during deployment.
 
-**FaceClass** takes a hybrid two-stage approach:
-1. **Deep Feature Extraction (ResNet-18)**: Instead of treating the CNN as the final decision maker, we use a fine-tuned ResNet-18 backbone as a rich feature extractor. It maps any detected face crop into a compact 512-dimensional embedding vector.
-2. **Maximum-Margin Classification (RBF-SVM)**: An RBF-kernel Support Vector Machine takes those 512-dimensional embeddings and finds the mathematically optimal maximum-margin hyperplane separating classes. This yields strong generalization and balanced recall across genders.
-3. **Fast Face Detection (OpenCV YuNet)**: An ONNX-based YuNet face detector localizes single and multi-face scenes in under 20ms on a standard CPU.
+**FaceClass** uses a hybrid two-stage architecture:
+1. **Deep Feature Extraction (ResNet-18)**: A fine-tuned ResNet-18 convolutional backbone maps any cropped face into a rich 512-dimensional semantic representation vector (via Global Average Pooling).
+2. **Maximum-Margin Classification (RBF-SVM)**: An RBF-kernel Support Vector Machine receives the normalized 512-dimensional feature vectors and constructs a mathematically optimal maximum-margin decision boundary. This significantly improves generalization and prevents overfitting.
+3. **Real-Time Edge Face Detection (OpenCV YuNet)**: A lightweight ONNX face detector localizes single and multi-face scenes in under 20ms on standard CPUs.
 
-The entire pipeline runs smoothly at **< 35 ms per frame on a regular CPU**—no dedicated GPU required.
-
----
-
-## Key Highlights
-
-- **Hybrid CNN + SVM Pipeline**: Leverages the representation strength of deep convolutional layers alongside the robustness of maximum-margin classification.
-- **Fair & Balanced**: Class-weighted optimization keeps recall balanced between male (92.26%) and female (92.48%) faces, avoiding one-sided bias.
-- **Fast CPU Inference**: Sub-35ms total latency makes it practical for live webcam streams and laptop webcams.
-- **Interactive Web App**: Includes a built-in web frontend with both drag-and-drop image analysis and live webcam detection.
-- **Project Presentation Included**: Full slide deck and presentation document are available directly in [`docs/`](docs/).
+The entire end-to-end pipeline operates at **< 35 ms per image on standard consumer CPUs** without requiring a GPU.
 
 ---
 
-## Architecture Overview
+## Key Highlights & Contributions
+
+- **Hybrid CNN + SVM Architecture**: Combines the high-level representation power of deep convolutional layers with the theoretical robustness of convex optimization.
+- **Fair & Symmetrical Precision**: Class-weighted optimization equalizes recall between male (92.26%) and female (92.48%) faces with virtually zero disparity ($\Delta = 0.22\%$).
+- **Lightweight CPU Deployment**: Fast sub-35ms inference latency on regular laptop CPUs.
+- **Ready-to-Use UI**: Clean, responsive web frontend with file upload, drag-and-drop, and live webcam feed.
+- **Presentation Materials Included**: Slide deck and PDF report are available in [`docs/`](docs/).
+
+---
+
+## Architecture Flow
 
 ```
  ┌─────────────────┐       ┌──────────────────────┐       ┌────────────────────────┐
@@ -49,29 +128,28 @@ The entire pipeline runs smoothly at **< 35 ms per frame on a regular CPU**—no
  └─────────────────┘       └──────────────────────┘       └────────────────────────┘
 ```
 
-### Flow
-1. **Detection & Alignment**: YuNet detects faces with confidence thresholding and bounding boxes padded by 15% to retain facial context (hairline, jawline).
-2. **Embedding**: Face crops are resized to 224x224, normalized via ImageNet statistics, and passed through ResNet-18 up to the Global Average Pooling layer ($\mathbb{R}^{512}$).
-3. **Classification**: Embeddings are scaled via `StandardScaler` and classified by the RBF Support Vector Machine.
+1. **Face Detection**: YuNet locates face coordinates and applies 15% contextual margin padding to preserve jawline, hairline, and facial context.
+2. **Feature Extraction**: Face crops are normalized and passed through ResNet-18 to produce a 512-dimensional feature vector.
+3. **Classification**: Features are standardized with `StandardScaler` and classified by the RBF Support Vector Machine.
 
 ---
 
-## Evaluation & Results
+## Quantitative Results
 
 Evaluated on the held-out test split of the **UTKFace** benchmark dataset:
 
-| Metric | Score | Note |
+| Metric | Score | Detail |
 |---|---|---|
-| **Overall Accuracy** | **91.98%** | Correct classifications across test set |
-| **Balanced Accuracy** | **91.95%** | Average recall across both classes |
+| **Overall Accuracy** | **91.98%** | Total test samples correctly classified |
+| **Balanced Accuracy** | **91.95%** | Mean recall across both male and female classes |
 | **Macro F1-Score** | **0.9196** | Harmonic mean of precision and recall |
-| **Male Recall** | **92.26%** | Correctly identified male faces |
-| **Female Recall** | **92.48%** | Correctly identified female faces |
-| **Recall Disparity ($\Delta$)** | **0.22%** | Negligible gap between genders |
+| **Male Recall** | **92.26%** | Correctly predicted male subjects |
+| **Female Recall** | **92.48%** | Correctly predicted female subjects |
+| **Recall Disparity ($\Delta$)** | **0.22%** | Symmetrical performance eliminating gender bias |
 
-### Best Hyperparameters:
+### Optimal Hyperparameters:
 - **CNN Backbone**: ResNet-18 fine-tuned on `layer4` + `fc` (AdamW, lr = $10^{-4}$, Dropout = 0.45)
-- **Feature Vector**: 512 dimensions (Global Average Pooling)
+- **Feature Dimension**: 512 (Global Average Pooling)
 - **SVM Kernel**: Radial Basis Function (RBF)
 - **Regularization ($C$)**: 0.01
 - **Gamma ($\gamma$)**: `'scale'` ($1 / (d \cdot \sigma^2)$)
@@ -79,73 +157,31 @@ Evaluated on the held-out test split of the **UTKFace** benchmark dataset:
 
 ---
 
-## Project Presentations & Documentation
+## Project Presentation & Documents
 
-The project slide deck and documentation are stored in the [`docs/`](docs/) folder:
-- **Presentation Slides (PowerPoint)**: [`docs/AIProject_SVM.pptx`](docs/AIProject_SVM.pptx)
+The presentation files are available in [`docs/`](docs/):
+- **Presentation Slide Deck (PPTX)**: [`docs/AIProject_SVM.pptx`](docs/AIProject_SVM.pptx)
 - **Presentation Document (PDF)**: [`docs/AIProject_SVM.pdf`](docs/AIProject_SVM.pdf)
 
 ---
 
-## Quick Start Guide
+## Retraining from Scratch (Optional)
 
-### 1. Clone the Repository
+If you wish to re-train the models or re-run the SVM grid search:
 
-```bash
-git clone git@github.com:subeshyadav3/AI_Project_SVM.git
-cd AI_Project_SVM
-```
-
-### 2. Set Up a Virtual Environment
-
-Using standard Python `venv`:
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r backend/requirements.txt
-```
-
-*Or using [uv](https://github.com/astral-sh/uv) (recommended for fast setup):*
-```bash
-uv venv --python 3.11 .venv
-source .venv/bin/activate
-uv pip install -r backend/requirements.txt
-```
-
-> **Note**: For training and notebooks, install the full requirements using `pip install -r requirements.txt`.
-
-### 3. Run the Web Application
-
-Start the FastAPI server:
-```bash
-python backend/app.py
-```
-
-Once running, open your browser at:
-```
-http://localhost:8000
-```
-
-- **Image Analysis**: Upload or drag-and-drop any image to view face bounding boxes, predicted gender, and confidence ratings.
-- **Live Webcam**: Stream video from your camera with real-time detection overlays (Blue = Male, Pink = Female).
-
----
-
-## Training from Scratch (Optional)
-
-If you'd like to train your own models or experiment with different SVM kernels:
-
-1. **Dry run test** (quick sanity check on synthetic samples):
+1. **Dry-run verification** (tests preprocessing and grid search pipeline on synthetic data):
    ```bash
    python train.py --dry-run
    ```
 
-2. **Full training pipeline** on the UTKFace dataset:
+2. **Full training on UTKFace dataset**:
    ```bash
+   # First install full training dependencies
+   pip install -r requirements.txt
    python train.py --data-dir /path/to/UTKFace --epochs 10 --batch-size 32
    ```
 
-3. **Interactive Notebook**:
+3. **Interactive Jupyter Notebook**:
    ```bash
    jupyter notebook notebooks/SVM_GENDER_TRAINING.ipynb
    ```
@@ -157,34 +193,34 @@ If you'd like to train your own models or experiment with different SVM kernels:
 ```
 .
 ├── backend/
-│   ├── app.py                     # FastAPI backend and static file server
+│   ├── app.py                     # FastAPI web server and REST endpoints
 │   ├── face_detector.py           # OpenCV YuNet face detection & coordinate logic
-│   ├── gender_model.py            # ResNet-18 feature extractor & SVM predictor
-│   └── requirements.txt           # Minimal backend dependencies
+│   ├── gender_model.py            # ResNet-18 feature extraction & SVM classifier
+│   └── requirements.txt           # Minimal backend dependencies for deployment
 ├── frontend/
 │   ├── index.html                 # Clean, responsive web UI
-│   ├── script.js                  # Webcam stream handler, canvas drawing & API client
-│   └── style.css                  # UI styling and themes
+│   ├── script.js                  # Frontend webcam stream, canvas & API client
+│   └── style.css                  # UI styling and visual themes
 ├── models/
-│   ├── face_detection_yunet_2023mar.onnx  # Pretrained YuNet ONNX weights
-│   ├── gender_resnet18_best.pth           # Fine-tuned ResNet-18 weights
-│   └── gender_complete_model.joblib       # Bundled SVM model + StandardScaler + metadata
+│   ├── face_detection_yunet_2023mar.onnx  # Pretrained YuNet ONNX face detector
+│   ├── gender_resnet18_best.pth           # Fine-tuned ResNet-18 feature extractor weights
+│   └── gender_complete_model.joblib       # Serialized SVM model + StandardScaler bundle
 ├── notebooks/
 │   └── SVM_GENDER_TRAINING.ipynb          # End-to-end training and SVM grid search notebook
 ├── results/
 │   ├── dataset_split.csv                  # Stratified train/val/test splits
-│   ├── gender_cnn_history.csv             # Loss & accuracy history
+│   ├── gender_cnn_history.csv             # Training and validation loss curves
 │   └── gender_svm_search.csv              # SVM hyperparameter search log
 ├── docs/
 │   ├── AIProject_SVM.pdf                  # Presentation document (PDF)
 │   └── AIProject_SVM.pptx                 # Presentation slide deck (PPTX)
 ├── train.py                               # Training, feature extraction & grid search pipeline
 ├── requirements.txt                       # Full project dependencies (training + backend)
-└── README.md                              # This file
+└── README.md                              # Main documentation & testing guide
 ```
 
 ---
 
-## License & Notes
+## License & Academic Attribution
 
-Developed for academic research and evaluation in facial attribute analysis using hybrid deep learning and convex optimization techniques. Feel free to use and adapt this project for educational and experimental purposes!
+Developed for academic evaluation and research in Facial Attribute Classification using Deep Learning and Convex Optimization.
